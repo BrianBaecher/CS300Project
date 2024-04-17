@@ -7,26 +7,24 @@
 
 class HashTable {
 private:
-	// the Bid struct is included via the header file BidStruct.hpp,
-	// the Node struct is only used within LinkedList class, so it's in LinkedList.hpp
-
 	// assigning the vector to hold a LinkedList in each bucket
 	std::vector<LinkedList> nodes;
 
 	unsigned int tableSize;
 
+	// private hashing method
 	unsigned int Hash(std::string courseId);
 
 public:
 	HashTable();
 	HashTable(unsigned int size);
 	virtual ~HashTable();
-	void Insert(Course course);
+	void Insert(Course& course);
 	Course Search(std::string courseId);
 };
 
 /**
- * Default constructor
+  Default constructor
  */
 HashTable::HashTable() {
 	// Initalize node structure by resizing tableSize
@@ -34,35 +32,25 @@ HashTable::HashTable() {
 }
 
 /**
- * Constructor for specifying size of the table
- * Use to improve efficiency of hashing algorithm
- * by reducing collisions without wasting memory.
+  Constructor for specifying size of the table
  */
 HashTable::HashTable(unsigned int size) {
 	// invoke local tableSize to size with this->
-	// resize nodes size
 	this->tableSize = size;
 	nodes.resize(size);
 }
 
 
 /**
- * Destructor
+  Destructor
  */
 HashTable::~HashTable() {
-	// FIXME (2): Implement logic to free storage when class is destroyed
 	// erase nodes begin - Note: vector::erase will call destructor for each LinkedList object within the nodes vector.
 	nodes.erase(nodes.begin());
 }
 
 /**
- * Calculate the hash value of a given key.
- * Note that key is specifically defined as
- * unsigned int to prevent undefined results
- * of a negative list index.
- *
- * @param key The key to hash
- * @return The calculated hash
+  Calculate the hash value of a given key.
  */
 unsigned int HashTable::Hash(std::string courseId) {
 	int sum = 0;
@@ -74,26 +62,18 @@ unsigned int HashTable::Hash(std::string courseId) {
 }
 
 /**
- * Insert a bid
- *
- * @param bid The bid to insert
+  Insert a course
  */
-void HashTable::Insert(Course course) {
-	// FIXME (5): Implement logic to insert a bid
-	// create the key for the given bid
+void HashTable::Insert(Course& course) {
 	unsigned int key = Hash(course.GetCourseId());
 
-	// Append bid to be inserted to the relevant LinkedList object (nodes vector at hashkey idx)
 	nodes.at(key).Append(course);
 }
 
 /**
- * Search for the specific course (by ID)
- *
- * @param courseId the course id to search for
+  Search for the specific course (by ID)
  */
 Course HashTable::Search(std::string courseId) {
-	// create the key for the courseId
 	unsigned int key = Hash(courseId);
 
 	// Call LinkedList::Search on the appropriate index, will return an empty course object if unsuccessful.

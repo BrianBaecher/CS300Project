@@ -13,7 +13,6 @@
 using namespace std;
 
 
-#pragma region Course Class Definition
 class Course {
 private:
 	string courseId;
@@ -54,7 +53,10 @@ public:
 		if (!this->prerequisites.empty()) {
 			prereqs = "Prerequisites: ";
 			for (int i = 0; i < this->prerequisites.size(); i++) {
-				prereqs += this->prerequisites.at(i) + ", ";
+				prereqs += this->prerequisites.at(i);
+				if (i < this->prerequisites.size() - 1) {
+					prereqs += ", ";
+				}
 			}
 		}
 		else {
@@ -86,10 +88,9 @@ public:
 
 	// Print method
 	void PrintCourseInfo() {
-		cout << this->courseId << ", " << this->courseName << ", " << this->GetCoursePrerequisites() << endl;
+		cout << this->courseId << ", " << this->courseName << endl << this->GetCoursePrerequisites() << endl;
 	}
 };
-#pragma endregion
 
 
 #pragma region String manipulation functions
@@ -127,16 +128,25 @@ vector<string> SplitOnComma(string str) {
 	return splitStr;
 }
 
-bool IsNotAlphanumeric(char c) {
-	return isalnum(c) == 0;
-}
+/**
+Removes all whitespace and non-alphanumeric characters from string, also capitalizes all alphabetical chars within string.
 
+@param input - string from input to treat
+@return string - treated input string. Example: "abc - 123" returns "ABC123"
+*/
 string TreatSearchInput(string input) {
-	// remove any char that is not alphanumeric
-	input.erase(remove_if(input.begin(), input.end(), [](char& c) { return isalnum(c) == 0; }), input.end());
-	// capitalize all alphabetical chars
-	for_each(input.begin(), input.end(), [](char& c) { c = toupper(c); });
-
+	// Note - the third argument to remove_if is an anonymous function
+	input.erase(remove_if(input.begin(), input.end(), [](char& c) { 
+		if (isalnum(c)) {
+			// char is alphanumeric, change to uppercase if possible (toupper will not throw error if char is non-alphabetical)
+			c = toupper(c);
+			// tell erase not to remove this char
+			return false;
+		}
+		// else, tell erase to remove this char
+		return true;
+		}), 
+		input.end());
 	return input;
 }
 #pragma endregion
@@ -149,7 +159,7 @@ vector<vector<string>> ReadAndParseRows(unordered_set<string>& validCourses) {
 	string inputPath;
 	vector<vector<string>> parsedRows;
 
-	cout << "Enter path to file" << endl;
+	cout << "Enter absolute path to file" << endl;
 	cin >> inputPath;
 
 	ifstream file(inputPath);
@@ -162,21 +172,23 @@ vector<vector<string>> ReadAndParseRows(unordered_set<string>& validCourses) {
 			if (hasBom) {
 				line = line.substr(3);
 			}
+			// get cell contents by splitting each row by comma
 			vector<string> parsedRow = SplitOnComma(line);
 
 			if (parsedRow.size() < 2) {
 				cerr << "Error processing line: \n" << line << endl;
 			}
 			else {
+				// add row's first cell to set of valid courses
 				validCourses.insert(parsedRow.at(0));
+				// add the split row to collection
 				parsedRows.push_back(parsedRow);
 			}
 		}
-
 		file.close();
 	}
 	else {
-		cout << "No file" << endl;
+		cout << "Could not open file at " << inputPath << endl;
 	}
 
 	return parsedRows;
@@ -184,63 +196,87 @@ vector<vector<string>> ReadAndParseRows(unordered_set<string>& validCourses) {
 
 
 
-// sort helper
+/**
+Sort helper to allow std::sort to make comparisons between Course objects. Course objects are compared based on the value of their courseId string member.
+*/
 bool CourseSortHelper(Course& course1, Course& course2) {
 	return course1.GetCourseId() < course2.GetCourseId();
 }
 
-// create course vector
-vector<Course> CreateCourseList(vector<vector<string>> parsedRows, unordered_set<string> validCourses) {
+/**
+Creates a vector holding Course objects.
+
+@param parsedRows - vector of split strings obtained from reading input file.
+@param validCourses - set of valid courseId strings, which should be populated when reading input file.
+
+@return vector of Course objects, ordered from low-to-high courseId.
+*/
+vector<Course> CreateCourseVector(vector<vector<string>>& parsedRows, unordered_set<string>& validCourses) {
 	vector<Course> courses;
 
-	courses.reserve(parsedRows.size());
+	// reserving space for courses vector, one element for each row from input file. 
+	// Used to prevent courses vector from having to re-size during additions.
+	courses.reserve(parsedRows.size()); 
 
 	for (const vector<string>& row : parsedRows) {
 		string courseId = row.at(0);
 		string courseName = row.at(1);
 		Course course = Course(courseId, courseName);
-		if (row.size() > 2) {
+		if (row.size() > 2) { // any element of a row that is at or above idx 2 represents a prerequisite courseId.
 			for (int i = 2; i < row.size(); i++) {
+				// calling Course method to add prereqs, pass in set of valid courses to validate that the prereq exists in course list.
 				course.AddCoursePrerequisite(row.at(i), validCourses);
 			}
 		}
 		courses.push_back(course);
 	}
-
+	// sorting vector before returning, using std::sort with the helper function
 	sort(courses.begin(), courses.end(), CourseSortHelper);
 	return courses;
 }
 
+/**
+Search function for an ordered vector of Course objects.
 
-Course CourseVectorBinarySearch(vector<Course>& courseList, string searchTerm) {
+@param courseVector - the vector used to store the Course objects
+@param searchTerm - string to search for inputted by user
+
+@return Course object - Course with courseId matching searchTerm OR empty Course object if no match exists.
+*/
+Course CourseVectorBinarySearch(vector<Course>& courseVector, string searchTerm) {
+	//treat input to allow for accurate courseId comparisons
+	string treatedSearchTerm = TreatSearchInput(searchTerm);
 	int lowIdx = 0;
-	int highIdx = courseList.size() - 1;
+	int highIdx = courseVector.size() - 1;
 
 	while (lowIdx <= highIdx) {
 		int midIdx = lowIdx + (highIdx - lowIdx) / 2;
 
-		if (courseList.at(midIdx).GetCourseId() == searchTerm) {
-			return courseList.at(midIdx);
+		if (courseVector.at(midIdx).GetCourseId() == treatedSearchTerm) {
+			return courseVector.at(midIdx);
 		}
-		else if (courseList.at(midIdx).GetCourseId() < searchTerm) {
+		else if (courseVector.at(midIdx).GetCourseId() < treatedSearchTerm) {
+			// restrict search to upper half of partition
 			lowIdx = midIdx + 1;
 		}
 		else {
+			// restrict search to lower half of partition
 			highIdx = midIdx - 1;
 		}
 	}
-	Course c = Course();
-	return c;
+	// return empty Course object if search is unsuccessful.
+	return Course();
 }
 
-
+/**
+Program driver.
+*/
 int main()
 {
-
-	cout << "Welcome to the course planner.\n" << endl;
+	cout << "Welcome to the course planner." << endl;
 
 	unordered_set<string> validCourses;
-	vector<Course> courseList;
+	vector<Course> courseVector;
 
 	bool isRunning = true;
 	while (isRunning) {
@@ -249,12 +285,13 @@ int main()
 
 		bool isValidDecision = false;
 		while (!isValidDecision) {
-			cout << "Menu:" << endl;
+			cout << endl;
 			cout << "  1. Load Courses" << endl;
 			cout << "  2. Display Courses in order" << endl;
 			cout << "  3. Search for Course by ID" << endl;
 			cout << "  4. Exit Program" << endl;
-			cout << "Enter choice: ";
+			cout << endl;
+			cout << "What would you like to do? ";
 
 			string input;
 			cin >> input;
@@ -262,10 +299,13 @@ int main()
 
 			try {
 				decision = stoi(input);
-				isValidDecision = 1 <= decision <=4;
+				isValidDecision = 1 <= decision && decision <= 4;
+				if (!isValidDecision) {
+					cout << decision << " is not a valid option." << endl;
+				}
 			}
 			catch (const invalid_argument& err) {
-				cout << input << " is not a valid input. Please enter a number between 1 and 4." << endl;
+				cout << input << " is not a valid input. Please enter a number in range 1 to 4." << endl;
 				break;
 			}
 		}
@@ -273,44 +313,57 @@ int main()
 		switch (decision)
 		{
 		case 1: {
-			//load courses
+			//load courses to vector
 			vector<vector<string>> parsedRows = ReadAndParseRows(validCourses);
-			courseList = CreateCourseList(parsedRows, validCourses);
+			courseVector = CreateCourseVector(parsedRows, validCourses);
 			break;
 		}
 
 		case 2: {
-			// print courses in order
-			for (Course& c : courseList) {
-				c.PrintCourseInfo();
+			// print courses in order (courseVector is already in order, sorted by CreateCourseVector function)
+			cout << "Here is a sample schedule: " << endl << endl;
+
+			for (Course& c : courseVector) {
+				cout << c.GetCourseId() << ", " << c.GetCourseName() << endl;
 			}
+
+			cout << endl;
+
 			break;
 		}
 
 		case 3: {
+			// searching for a course 
 			string input;
-			cout << "Enter Course ID to search for." << endl;
+			cout << "What course do you want to know about? ";
+			// read input from user
 			getline(cin, input);
 
-			string searchTerm = TreatSearchInput(input);
-
-			Course c = CourseVectorBinarySearch(courseList, searchTerm);
+			// call binary search function on the vector with the user input
+			// Note - user input is treated/cleaned within the function.
+			Course c = CourseVectorBinarySearch(courseVector, input);
+			
+			cout << endl;
 
 			if (!c.GetIsEmpty()) {
+				// if not empty, search was a success
 				c.PrintCourseInfo();
 			}
 			else {
-				cout << "no results for search " << searchTerm << endl;
+				cout << "no results found for \"" << input << "\"" << endl;
 			}
 			break;
 		}
 
 		case 4: {
-			isRunning = false;
+			// exit program
+			isRunning = false; // ending main while loop
+			cout << "Thank you for using the course planner!" << endl;
 			break;
 		}
 
 		default:
+			// default case should not run, as invalid inputs are dealt with before the switch statement begins.
 			break;
 		}
 

@@ -13,7 +13,7 @@
 using namespace std;
 
 
-//Course class
+#pragma region Course Class Definition
 class Course {
 private:
 	string courseId;
@@ -21,22 +21,34 @@ private:
 	vector<string> prerequisites;
 
 public:
+	// Default Constructor
 	Course() {};
 
+	// Constructor with Course id and name
 	Course(string courseId, string courseName) {
 		this->courseId = courseId;
 		this->courseName = courseName;
 	}
 
-	//get
+	// Getter methods
+
+	/**
+	Returns course's courseId (string)
+	*/
 	string GetCourseId() {
 		return this->courseId;
 	}
 
+	/**
+	Returns course's courseName (string)
+	*/
 	string GetCourseName() {
 		return this->courseName;
 	}
 
+	/**
+	Returns a string containing the courseIds for every course within the Course object's prerequisites vector.
+	*/
 	string GetCoursePrerequisites() {
 		string prereqs;
 		if (!this->prerequisites.empty()) {
@@ -51,26 +63,40 @@ public:
 		return prereqs;
 	}
 
+	/**
+	Returns a bool indicating whether or not the Course object is empty.
+	"Empty" meaning it is a placeholder object that does not hold values representing a course from the data.
+	*/
 	bool GetIsEmpty() {
 		return (this->courseId.empty() && this->courseName.empty());
 	}
 
-	// set
+	// Setter method
+	/**
+	Validates prereq string by ensuring an identical string exists in validCourses.
+	If valid, appends prereq string to Course object's prerequisites member vector.
+	@param prereq - string representing a courseId
+	@param validCourses - unordered set of strings containing all valid courseIds from input file.
+	*/
 	void AddCoursePrerequisite(string prereq, unordered_set<string> validCourses) {
 		if (validCourses.find(prereq) != validCourses.end()) {
 			this->prerequisites.push_back(prereq);
 		}
 	}
 
+	// Print method
 	void PrintCourseInfo() {
 		cout << this->courseId << ", " << this->courseName << ", " << this->GetCoursePrerequisites() << endl;
 	}
 };
+#pragma endregion
 
 
-
-// trimming whitespace
-// Credit: https://www.thecrazyprogrammer.com/2021/01/c-string-trim.html?expand_article=1
+#pragma region String manipulation functions
+/**
+Trims leading and trailing whitespace from string.
+Credit: https://www.thecrazyprogrammer.com/2021/01/c-string-trim.html?expand_article=1
+*/
 static string TrimString(string str) {
 	const char* typeOfWhitespaces = " \t\n\r\f\v";
 	str.erase(str.find_last_not_of(typeOfWhitespaces) + 1);
@@ -79,7 +105,13 @@ static string TrimString(string str) {
 }
 
 
-// split function
+/**
+Splits a string using comma ',' as delimiter.
+Used when parsing the text input's comma separated string values.
+
+@param str - string to be split
+@return vector<string> - vector of substrings from str argument.
+*/
 vector<string> SplitOnComma(string str) {
 	const char delimiter = ',';
 	vector<string> splitStr;
@@ -95,11 +127,24 @@ vector<string> SplitOnComma(string str) {
 	return splitStr;
 }
 
+bool IsNotAlphanumeric(char c) {
+	return isalnum(c) == 0;
+}
 
-/*
+string TreatSearchInput(string input) {
+	// remove any char that is not alphanumeric
+	input.erase(remove_if(input.begin(), input.end(), [](char& c) { return isalnum(c) == 0; }), input.end());
+	// capitalize all alphabetical chars
+	for_each(input.begin(), input.end(), [](char& c) { c = toupper(c); });
+
+	return input;
+}
+#pragma endregion
+
+
+/**
 Open read text file
 */
-
 vector<vector<string>> ReadAndParseRows(unordered_set<string>& validCourses) {
 	string inputPath;
 	vector<vector<string>> parsedRows;
@@ -112,6 +157,7 @@ vector<vector<string>> ReadAndParseRows(unordered_set<string>& validCourses) {
 	if (file.is_open()) {
 		string line;
 		while (getline(file, line)) {
+			// removing Byte Order Marker
 			bool hasBom = line.substr(0, 3).compare("\xEF\xBB\xBF") == 0;
 			if (hasBom) {
 				line = line.substr(3);
@@ -187,21 +233,19 @@ Course CourseVectorBinarySearch(vector<Course>& courseList, string searchTerm) {
 	return c;
 }
 
-// i really don't like cpp
-bool IsNotAlphanumeric(char c) {
-	return isalnum(c) == 0;
-}
-
 
 int main()
 {
+
+	cout << "Welcome to the course planner.\n" << endl;
+
 	unordered_set<string> validCourses;
 	vector<Course> courseList;
 
 	bool isRunning = true;
 	while (isRunning) {
 
-		int decision;
+		int decision = NULL;
 
 		bool isValidDecision = false;
 		while (!isValidDecision) {
@@ -214,14 +258,14 @@ int main()
 
 			string input;
 			cin >> input;
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 			try {
 				decision = stoi(input);
-				isValidDecision = true;
+				isValidDecision = 1 <= decision <=4;
 			}
 			catch (const invalid_argument& err) {
-				cout << err.what() << endl;
-				cout << "try again" << endl;
+				cout << input << " is not a valid input. Please enter a number between 1 and 4." << endl;
 				break;
 			}
 		}
@@ -244,15 +288,11 @@ int main()
 		}
 
 		case 3: {
-			string searchTerm;
+			string input;
 			cout << "Enter Course ID to search for." << endl;
-			cin >> searchTerm;
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			getline(cin, input);
 
-			searchTerm.erase(remove_if(searchTerm.begin(), searchTerm.end(), IsNotAlphanumeric), searchTerm.end());
-			for_each(searchTerm.begin(), searchTerm.end(), [](char& c) { c = ::toupper(c); });
-
-			cout << searchTerm << endl;
+			string searchTerm = TreatSearchInput(input);
 
 			Course c = CourseVectorBinarySearch(courseList, searchTerm);
 

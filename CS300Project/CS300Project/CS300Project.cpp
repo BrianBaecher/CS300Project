@@ -1,5 +1,9 @@
-// CS300Project.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+//============================================================================
+// Name        : CS300Project.cpp
+// Student     : Brian Baecher
+// Description : CS-300-R4807 Project Two, using Vector Data Structure
+//============================================================================
+
 
 #include <iostream>
 #include <fstream>
@@ -12,7 +16,9 @@
 
 using namespace std;
 
-
+/**
+Class to store information for an individual course.
+*/
 class Course {
 private:
 	string courseId;
@@ -23,14 +29,13 @@ public:
 	// Default Constructor
 	Course() {};
 
-	// Constructor with Course id and name
+	// Constructor with id and name
 	Course(string courseId, string courseName) {
 		this->courseId = courseId;
 		this->courseName = courseName;
 	}
 
 	// Getter methods
-
 	/**
 	Returns course's courseId (string)
 	*/
@@ -154,6 +159,10 @@ string TreatSearchInput(string input) {
 
 /**
 Open read text file
+
+@param validCourses - set of valid courseId strings. Should be empty when first reading file. courseIds within the input file will be added to this set.
+
+@return vector<vector<string>> - a vector of split strings, one element for each row present in input data.
 */
 vector<vector<string>> ReadAndParseRows(unordered_set<string>& validCourses) {
 	string inputPath;
@@ -241,7 +250,7 @@ Search function for an ordered vector of Course objects.
 @param courseVector - the vector used to store the Course objects
 @param searchTerm - string to search for inputted by user
 
-@return Course object - Course with courseId matching searchTerm OR empty Course object if no match exists.
+@return Course object - Either a Course with courseId matching searchTerm OR an empty Course object if no match exists.
 */
 Course CourseVectorBinarySearch(vector<Course>& courseVector, string searchTerm) {
 	//treat input to allow for accurate courseId comparisons
@@ -278,7 +287,7 @@ int main()
 	unordered_set<string> validCourses;
 	vector<Course> courseVector;
 
-	bool isRunning = true;
+	bool isRunning = true; // main while loop controller
 	while (isRunning) {
 
 		int decision = NULL;
@@ -295,7 +304,7 @@ int main()
 
 			string input;
 			cin >> input;
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			cin.ignore(numeric_limits<streamsize>::max(), '\n'); // ignoring any excess input after initial entry
 
 			try {
 				decision = stoi(input);
@@ -320,7 +329,7 @@ int main()
 		}
 
 		case 2: {
-			// print courses in order (courseVector is already in order, sorted by CreateCourseVector function)
+			// print courses in order (courseVector is sorted by CreateCourseVector function, so the vector will be ordered already)
 			cout << "Here is a sample schedule: " << endl << endl;
 
 			for (Course& c : courseVector) {
@@ -328,7 +337,6 @@ int main()
 			}
 
 			cout << endl;
-
 			break;
 		}
 
@@ -369,5 +377,6 @@ int main()
 
 	}
 
+	return 0;
 }
 

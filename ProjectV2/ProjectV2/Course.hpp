@@ -19,7 +19,7 @@ public:
 	// Default Constructor
 	Course() {};
 
-	// Constructor with Course attributes (prerequisites are assigned through the AddCoursePrerequisites method)
+	// Constructor with Course id and name
 	Course(std::string courseId, std::string courseName) {
 		this->courseId = courseId;
 		this->courseName = courseName;

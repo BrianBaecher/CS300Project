@@ -10,7 +10,7 @@ The coursework involved creating pseudocode for versions of the program that use
 
 > How did you overcome any roadblocks you encountered while going through the activities or project?
 
-Thanks to the aforementioned psuedocode, writing the program was a fairly smooth process. I managed to account for most of the issues I'd have to account for within the outline I created. A minor issue I ran into was the means by which the Course objects could be compared; this issue was pretty quickly resolved after doing a bit of reading through C++ documentation, after which I created a small helper function that is used to facilitate the comparison of the Class type - I had initially written it as a lambda function but the seperate definition enhances the readability of the program's code, to some degree.
+Thanks to the aforementioned psuedocode, writing the program was a fairly smooth process. I managed to preempt most of the issues I'd have to account for within the outline I created. A minor issue I ran into was the means by which the Course objects could be compared; this issue was pretty quickly resolved after doing a bit of reading through C++ documentation, after which I created a small helper function that is used to facilitate the comparison of the Class type – I had initially written it as a lambda function but the separate definition enhances the readability of the program's code, to some degree.
 
 > How has your work on this project expanded your approach to designing software and developing programs?
 
